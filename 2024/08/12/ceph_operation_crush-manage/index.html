@@ -19,25 +19,24 @@
   <meta name="author" content="渣渣杰">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。">
+    <meta name="description" content="默认配置下，Ceph集群的容灾域是host，对于节点比较多的集群，建议使用rack作为容灾域。以rack作为容灾域时，同一个rack内的节点全部故障时，Ceph集群仍然可以工作。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="使用Heketi管理GlusterFS集群">
-<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/09/heketi_manage_glusterfs/index.html">
+<meta property="og:title" content="Ceph集群容灾域调整">
+<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/12/ceph_operation_crush-manage/index.html">
 <meta property="og:site_name" content="渣渣杰的运维文档">
-<meta property="og:description" content="Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。">
+<meta property="og:description" content="默认配置下，Ceph集群的容灾域是host，对于节点比较多的集群，建议使用rack作为容灾域。以rack作为容灾域时，同一个rack内的节点全部故障时，Ceph集群仍然可以工作。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-08-09T07:53:42.000Z">
-<meta property="article:modified_time" content="2024-08-09T09:30:32.556Z">
+<meta property="article:published_time" content="2024-08-12T02:42:59.000Z">
+<meta property="article:modified_time" content="2024-08-12T03:34:14.802Z">
 <meta property="article:author" content="渣渣杰">
 <meta property="article:tag" content="storage">
-<meta property="article:tag" content="heketi">
+<meta property="article:tag" content="ceph">
 <meta property="article:tag" content="linux">
-<meta property="article:tag" content="glusterfs">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>使用Heketi管理GlusterFS集群 - 渣渣杰的运维文档</title>
+  <title>Ceph集群容灾域调整 - 渣渣杰的运维文档</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -203,7 +202,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="使用Heketi管理GlusterFS集群"></span>
+            <span id="subtitle" data-typed-text="Ceph集群容灾域调整"></span>
           
         </div>
 
@@ -214,8 +213,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-08-09 15:53" pubdate>
-          2024年8月9日 下午
+        <time datetime="2024-08-12 10:42" pubdate>
+          2024年8月12日 上午
         </time>
       </span>
     
@@ -226,7 +225,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          132 字
+          265 字
         
       </span>
     
@@ -237,7 +236,7 @@
         
         
         
-          2 分钟
+          3 分钟
         
       </span>
     
@@ -274,21 +273,37 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">使用Heketi管理GlusterFS集群</h1>
+            <h1 id="seo-header">Ceph集群容灾域调整</h1>
             
             
               <div class="markdown-body">
                 
-                <p>Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。</p>
+                <p>默认配置下，Ceph集群的容灾域是host，对于节点比较多的集群，建议使用rack作为容灾域。以rack作为容灾域时，同一个rack内的节点全部故障时，Ceph集群仍然可以工作。</p>
 <span id="more"></span>
 
-<h2 id="获取集群的topology信息"><a href="#获取集群的topology信息" class="headerlink" title="获取集群的topology信息"></a>获取集群的topology信息</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli topology info --json &gt; /tmp/topology<br></code></pre></td></tr></table></figure>
+<p>修改集群容灾域为rack，步骤如下：</p>
+<ol>
+<li><p>创建rack域</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd crush add-bucket rack1 rack<br>$ ceph osd crush add-bucket rack2 rack<br>$ ceph osd crush add-bucket rack3 rack<br></code></pre></td></tr></table></figure></li>
+<li><p>把三个新建的rack，加入default下</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd crush move rack1 root=default<br>$ ceph osd crush move rack2 root=default<br>$ ceph osd crush move rack3 root=default<br></code></pre></td></tr></table></figure></li>
+<li><p>把节点加入rack域</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd crush move new-prod-ceph11 rack=rack1<br>$ ceph osd crush move new-prod-ceph12 rack=rack2<br>$ ceph osd crush move new-prod-ceph13 rack=rack3<br></code></pre></td></tr></table></figure></li>
+<li><p>获取集群的map信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd getcrushmap -o monmap<br></code></pre></td></tr></table></figure></li>
+<li><p>对map信息进行反编译</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ crushtool -d monmap -o monmap.txt<br></code></pre></td></tr></table></figure></li>
+<li><p>修改容灾域<br>把monmap.txt的rule配置中的<code>step chooseleaf firstn 0 type host</code>，替换为<code>step chooseleaf firstn 0 type rack</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ vim  monmap.txt<br>rule replicated_rule &#123;<br><span class="hljs-built_in">id</span> 0<br><span class="hljs-built_in">type</span> replicated<br>min_size 1<br>max_size 10<br>step take default<br>step chooseleaf firstn 0 <span class="hljs-built_in">type</span> rack<br>step emit<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>编译生成系统能识别的map</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ crushtool -c monmap.txt -o monmap_rack<br></code></pre></td></tr></table></figure></li>
+<li><p>将map信息注入到集群</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd setcrushmap -i monmap_rack<br></code></pre></td></tr></table></figure></li>
+<li><p>验证</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd crush rule dump<br>[<br>    &#123;<br>        <span class="hljs-string">&quot;rule_id&quot;</span>: 0,<br>        <span class="hljs-string">&quot;rule_name&quot;</span>: <span class="hljs-string">&quot;replicated_rule&quot;</span>,<br>        <span class="hljs-string">&quot;ruleset&quot;</span>: 0,<br>        <span class="hljs-string">&quot;type&quot;</span>: 1,<br>        <span class="hljs-string">&quot;min_size&quot;</span>: 1,<br>        <span class="hljs-string">&quot;max_size&quot;</span>: 10,<br>        <span class="hljs-string">&quot;steps&quot;</span>: [<br>            &#123;<br>                <span class="hljs-string">&quot;op&quot;</span>: <span class="hljs-string">&quot;take&quot;</span>,<br>                <span class="hljs-string">&quot;item&quot;</span>: -1,<br>                <span class="hljs-string">&quot;item_name&quot;</span>: <span class="hljs-string">&quot;default&quot;</span><br>            &#125;,<br>            &#123;<br>                <span class="hljs-string">&quot;op&quot;</span>: <span class="hljs-string">&quot;chooseleaf_firstn&quot;</span>,<br>                <span class="hljs-string">&quot;num&quot;</span>: 0,<br>                <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;rack&quot;</span><br>            &#125;,<br>            &#123;<br>                <span class="hljs-string">&quot;op&quot;</span>: <span class="hljs-string">&quot;emit&quot;</span><br>            &#125;<br>        ]<br>    &#125;<br>]<br></code></pre></td></tr></table></figure></li>
+</ol>
 
-<div class="note note-info">
-            <p>由于频繁的获取topology会对heketi产生一定的压力，所以这里把查询的信息写入到文件，之后的操作直接读取保存的文件，避免频繁的访问heketi</p>
-          </div>
-
-<h2 id="根据brickID查询volume名称"><a href="#根据brickID查询volume名称" class="headerlink" title="根据brickID查询volume名称"></a>根据brickID查询volume名称</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cat</span> /tmp/topology  | jq -r <span class="hljs-string">&#x27;.clusters[0].volumes[] | select(.bricks[].id == &quot;52decd5f6dd71c40ef967cf0f0f8f55d&quot;)&#x27;</span> | jq .name<br></code></pre></td></tr></table></figure>
                 
               </div>
             
@@ -311,8 +326,15 @@
   
     <span>></span>
     
-  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/GlusterFS/" class="category-chain-item">GlusterFS</a>
+  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/" class="category-chain-item">Ceph</a>
   
+  
+    <span>></span>
+    
+  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/%E8%BF%90%E7%BB%B4%E7%AE%A1%E7%90%86/" class="category-chain-item">运维管理</a>
+  
+  
+
   
 
   
@@ -330,11 +352,9 @@
       
         <a href="/mydocs/tags/storage/" class="print-no-link">#storage</a>
       
-        <a href="/mydocs/tags/heketi/" class="print-no-link">#heketi</a>
+        <a href="/mydocs/tags/ceph/" class="print-no-link">#ceph</a>
       
         <a href="/mydocs/tags/linux/" class="print-no-link">#linux</a>
-      
-        <a href="/mydocs/tags/glusterfs/" class="print-no-link">#glusterfs</a>
       
     </div>
   
@@ -346,8 +366,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>使用Heketi管理GlusterFS集群</div>
-      <div>http://xiangjie818.github.io/mydocs/2024/08/09/heketi_manage_glusterfs/</div>
+      <div>Ceph集群容灾域调整</div>
+      <div>http://xiangjie818.github.io/mydocs/2024/08/12/ceph_operation_crush-manage/</div>
     </div>
     <div class="license-meta">
       
@@ -359,7 +379,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2024年8月9日</div>
+          <div>2024年8月12日</div>
         </div>
       
       
@@ -391,9 +411,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/mydocs/2024/08/09/cubefs-install/" title="CubeFS安装部署">
+                      <a href="/mydocs/2024/08/12/consul_install/" title="Consul集群安装">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CubeFS安装部署</span>
+                        <span class="hidden-mobile">Consul集群安装</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -401,12 +421,27 @@
                   <article class="post-next col-6">
                     
                     
+                      <a href="/mydocs/2024/08/12/ceph_troubleshooting_bluefs-spillover/" title="OSD experiencing BlueFS Spillover">
+                        <span class="hidden-mobile">OSD experiencing BlueFS Spillover</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
                   </article>
                 </div>
               
             </div>
 
             
+  
+  
+    <article id="comments" lazyload>
+      
+
+    </article>
+  
+
+
           </article>
         </div>
       </div>

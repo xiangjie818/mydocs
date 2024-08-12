@@ -19,25 +19,24 @@
   <meta name="author" content="渣渣杰">
   <meta name="keywords" content="">
   
-    <meta name="description" content="CubeFS是新一代云原生存储产品，目前是云原生计算基金会（CNCF）托管的孵化阶段开源项目， 兼容S3、POSIX、HDFS等多种访问协议，支持多副本与纠删码两种存储引擎，为用户提供多租户、 多AZ部署以及跨区域复制等多种特性，广泛应用于大数据、AI、容器平台、数据库、中间件存算分离、数据共享以及数据保护等场景。">
+    <meta name="description" content="ceph-deploy是一个用来快速部署ceph集群的工具。不过并没有被积极的维护，目前对于新版本的ceph来说，已经被弃用了。而且ceph-deploy不支持CentOS8、RHEL8以及更新的操作系统。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CubeFS安装部署">
-<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/09/cubefs-install/index.html">
+<meta property="og:title" content="使用ceph-deploy部署Ceph集群">
+<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/09/ceph_install_ceph-deploy/index.html">
 <meta property="og:site_name" content="渣渣杰的运维文档">
-<meta property="og:description" content="CubeFS是新一代云原生存储产品，目前是云原生计算基金会（CNCF）托管的孵化阶段开源项目， 兼容S3、POSIX、HDFS等多种访问协议，支持多副本与纠删码两种存储引擎，为用户提供多租户、 多AZ部署以及跨区域复制等多种特性，广泛应用于大数据、AI、容器平台、数据库、中间件存算分离、数据共享以及数据保护等场景。">
+<meta property="og:description" content="ceph-deploy是一个用来快速部署ceph集群的工具。不过并没有被积极的维护，目前对于新版本的ceph来说，已经被弃用了。而且ceph-deploy不支持CentOS8、RHEL8以及更新的操作系统。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-08-09T09:29:28.000Z">
-<meta property="article:modified_time" content="2024-08-09T09:59:08.978Z">
+<meta property="article:published_time" content="2024-08-09T11:44:31.000Z">
+<meta property="article:modified_time" content="2024-08-12T03:41:40.624Z">
 <meta property="article:author" content="渣渣杰">
 <meta property="article:tag" content="storage">
-<meta property="article:tag" content="cubefs">
-<meta property="article:tag" content="heketi">
+<meta property="article:tag" content="ceph">
 <meta property="article:tag" content="linux">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>CubeFS安装部署 - 渣渣杰的运维文档</title>
+  <title>使用ceph-deploy部署Ceph集群 - 渣渣杰的运维文档</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -203,7 +202,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="CubeFS安装部署"></span>
+            <span id="subtitle" data-typed-text="使用ceph-deploy部署Ceph集群"></span>
           
         </div>
 
@@ -214,8 +213,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-08-09 17:29" pubdate>
-          2024年8月9日 下午
+        <time datetime="2024-08-09 19:44" pubdate>
+          2024年8月9日 晚上
         </time>
       </span>
     
@@ -226,7 +225,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          409 字
+          457 字
         
       </span>
     
@@ -274,51 +273,50 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">CubeFS安装部署</h1>
+            <h1 id="seo-header">使用ceph-deploy部署Ceph集群</h1>
             
             
               <div class="markdown-body">
                 
-                <p>CubeFS是新一代云原生存储产品，目前是云原生计算基金会（CNCF）托管的孵化阶段开源项目， 兼容S3、POSIX、HDFS等多种访问协议，支持多副本与纠删码两种存储引擎，为用户提供多租户、 多AZ部署以及跨区域复制等多种特性，广泛应用于大数据、AI、容器平台、数据库、中间件存算分离、数据共享以及数据保护等场景。</p>
+                <p>ceph-deploy是一个用来快速部署ceph集群的工具。不过并没有被积极的维护，目前对于新版本的ceph来说，已经被弃用了。而且ceph-deploy不支持CentOS8、RHEL8以及更新的操作系统。</p>
 <span id="more"></span>
 
-<p>本文介绍如何使用Ansible部署CubeFS集群，目前仅支持副本模式的安装。</p>
-<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><table>
+<h2 id="环境信息"><a href="#环境信息" class="headerlink" title="环境信息"></a>环境信息</h2><table>
 <thead>
 <tr>
-<th>IP</th>
-<th>CPU</th>
-<th>内存</th>
-<th>硬盘</th>
+<th align="center">组件</th>
+<th align="center">版本</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>192.168.0.1</td>
-<td>40</td>
-<td>128G</td>
-<td>8T * 8</td>
+<td align="center">ceph-deploy</td>
+<td align="center">2.0.1</td>
 </tr>
 <tr>
-<td>192.168.0.2</td>
-<td>40</td>
-<td>128G</td>
-<td>8T * 8</td>
+<td align="center">ceph</td>
+<td align="center">Octopus(15.2.16)</td>
 </tr>
 <tr>
-<td>192.168.0.3</td>
-<td>40</td>
-<td>128G</td>
-<td>8T * 8</td>
+<td align="center">system release</td>
+<td align="center">CentOS 7.6</td>
 </tr>
 </tbody></table>
-<h2 id="部署过程"><a href="#部署过程" class="headerlink" title="部署过程"></a>部署过程</h2><p>下载ansible-cubefs</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://github.com/xiangjie818/ansible-cubefs.git<br></code></pre></td></tr></table></figure>
-<p>修改inventry文件</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[cubefs]<br>192.168.0.1 master=True meta=True data=True object=True<br>192.168.0.2 master=True meta=True data=True object=True<br>192.168.0.3 master=True meta=True data=True object=True<br><br>[consul]<br>192.168.0.1<br>192.168.0.2<br>192.168.0.3<br><br>[all:vars]<br>ansible_ssh_port=22<br></code></pre></td></tr></table></figure>
-<p>修改group_vars&#x2F;all.yaml</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># 配置CubeFS安装信息</span><br><span class="hljs-comment"># 这里填写CubeFS安装包名称和下载地址，根据实际情况进行调整</span><br><span class="hljs-attr">cubefs_package:</span> <span class="hljs-string">cubefs-3.3.1-linux-amd64.tar.gz</span><br><span class="hljs-attr">download_site:</span> <span class="hljs-string">http://s3.jishu.idc/spider-internal-read/cubefs/</span><br><span class="hljs-attr">cluster_name:</span> <span class="hljs-string">cubefs</span><br><span class="hljs-attr">cubefs_meta_memRatio:</span> <span class="hljs-number">75</span><br><span class="hljs-comment"># 配置Consul地址, 需要提前配置好consul集群，并配置域名, 安装文件和下载地址根据实际情况进行修改</span><br><span class="hljs-attr">consul_addr:</span> <span class="hljs-string">http://cfsconsul.paas.idc</span><br><span class="hljs-attr">consul_package:</span> <span class="hljs-string">consul_1.15.2_linux_amd64.tar.gz</span><br><span class="hljs-attr">consul_download_site:</span> <span class="hljs-string">http://s3.jishu.idc/spider-internal-read/consul</span><br><br><span class="hljs-attr">cubefs_master_host:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-number">192.168</span><span class="hljs-number">.0</span><span class="hljs-number">.1</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-number">192.168</span><span class="hljs-number">.0</span><span class="hljs-number">.2</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-number">192.168</span><span class="hljs-number">.0</span><span class="hljs-number">.3</span><br><br><span class="hljs-comment"># 配置数据盘的挂载路径</span><br><span class="hljs-attr">mountmap:</span><br>  <span class="hljs-string">/dev/sdb:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data1</span><br>  <span class="hljs-string">/dev/sdc:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data2</span><br>  <span class="hljs-string">/dev/sdd:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data3</span><br>  <span class="hljs-string">/dev/sde:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data4</span><br>  <span class="hljs-string">/dev/sdf:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data5</span><br>  <span class="hljs-string">/dev/sdg:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data6</span><br>  <span class="hljs-string">/dev/sdh:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data7</span><br>  <span class="hljs-string">/dev/sdi:</span><br>    <span class="hljs-attr">directory:</span> <span class="hljs-string">/cfs/data8</span><br></code></pre></td></tr></table></figure>
-<p>开始安装</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ansible-playbook cubefs.yaml -i hosts<br></code></pre></td></tr></table></figure>
+<h2 id="配置yum源"><a href="#配置yum源" class="headerlink" title="配置yum源"></a>配置yum源</h2><p>这里使用的公网的阿里云的yum源</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ vim /etc/yum.repos.d/ceph.repo <br>[ceph_noarch]<br>name=ceph_noarch<br>baseurl=https://repo.huaweicloud.com/ceph/rpm-15.2.16/el7/noarch/<br>enabled=1<br>gpgcheck=0<br>gpgkey=http://mirrors.tuna.tsinghua.edu.cn/ceph/keys/release.asc<br><br>[ceph_x86_64]<br>name=ceph_x86_64<br>baseurl=https://repo.huaweicloud.com/ceph/rpm-15.2.16/el7/x86_64/<br>enabled=1<br>gpgcheck=0<br>gpgkey=http://mirrors.tuna.tsinghua.edu.cn/ceph/keys/release.asc<br></code></pre></td></tr></table></figure>
+<p>如果需要使用代理访问公网，可以直接在&#x2F;etc&#x2F;yum.conf中添加proxy配置，格式为<code>proxy=http://server:port</code></p>
+<h2 id="安装ceph-deploy"><a href="#安装ceph-deploy" class="headerlink" title="安装ceph-deploy"></a>安装ceph-deploy</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ yum -y install ceph-deploy<br></code></pre></td></tr></table></figure>
+<h2 id="开始部署ceph集群"><a href="#开始部署ceph集群" class="headerlink" title="开始部署ceph集群"></a>开始部署ceph集群</h2><h3 id="创建配置保存目录"><a href="#创建配置保存目录" class="headerlink" title="创建配置保存目录"></a>创建配置保存目录</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">mkdir</span> cluster &amp;&amp; <span class="hljs-built_in">cd</span> cluster<br></code></pre></td></tr></table></figure>
+<h3 id="生成配置文件"><a href="#生成配置文件" class="headerlink" title="生成配置文件"></a>生成配置文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy new node1 node2 node3<br></code></pre></td></tr></table></figure>
+<h3 id="修改配置文件，添加网络配置"><a href="#修改配置文件，添加网络配置" class="headerlink" title="修改配置文件，添加网络配置"></a>修改配置文件，添加网络配置</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ vim ceph.conf<br>[global]<br>fsid = dc590171-99c4-407d-9011-1966304da306<br>mon_initial_members = node1, node2, node3<br>mon_host = 172.16.0.11,172.16.0.12,172.16.0.13<br>auth_cluster_required = cephx<br>auth_service_required = cephx<br>auth_client_required = cephx<br>public_network = 172.16.0.0/24<br></code></pre></td></tr></table></figure>
+<h3 id="安装软件包"><a href="#安装软件包" class="headerlink" title="安装软件包"></a>安装软件包</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy install node1 node2 node3 --mon --mgr --rgw --osd --local-mirror --nogpgcheck --no-adjust-repos<br></code></pre></td></tr></table></figure>
+<h3 id="安装Monitor"><a href="#安装Monitor" class="headerlink" title="安装Monitor"></a>安装Monitor</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy mon create-initial<br>扩容新的monitor节点，可以使用命令<br>$ ceph-deploy --overwrite-conf mon add [Host]<br></code></pre></td></tr></table></figure>
+<h3 id="分发配置文件"><a href="#分发配置文件" class="headerlink" title="分发配置文件"></a>分发配置文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy admin node1 node2 node3<br></code></pre></td></tr></table></figure>
+<h3 id="添加OSD"><a href="#添加OSD" class="headerlink" title="添加OSD"></a>添加OSD</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">批量添加所有节点的磁盘<br>$ <span class="hljs-keyword">for</span> host <span class="hljs-keyword">in</span> node1 node2 node3 ; <span class="hljs-keyword">do</span> <span class="hljs-keyword">for</span> dev <span class="hljs-keyword">in</span> sdb sdc sdd sde sdf sdg sdh sdi sdj ; <span class="hljs-keyword">do</span> ceph-deploy osd create <span class="hljs-variable">$host</span>  --data /dev/<span class="hljs-variable">$dev</span> ;<span class="hljs-keyword">done</span>  ; <span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure>
+<h3 id="添加MGR"><a href="#添加MGR" class="headerlink" title="添加MGR"></a>添加MGR</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy mgr create node1 node2 node3<br></code></pre></td></tr></table></figure>
+<h3 id="添加RGW"><a href="#添加RGW" class="headerlink" title="添加RGW"></a>添加RGW</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph-deploy rgw create node1 node2 node3<br></code></pre></td></tr></table></figure>
+<p>配置文件中添加rgw相关配置</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ vim /etc/ceph/ceph.conf<br>[global]<br>fsid = 59293392-e060-454c-b90c-a6341838d9ba<br>mon_initial_members = node1,node2,node3<br>mon_host = 172.16.0.11,172.16.0.12,172.16.0.13<br>auth_cluster_required = cephx<br>auth_service_required = cephx<br>auth_client_required = cephx<br><br>public_network = 172.16.0.0/24<br><br>[client.rgw.node1]<br>keyring = /var/lib/ceph/radosgw/ceph-rgw.node1/keyring<br><span class="hljs-built_in">log</span> file = /var/log/ceph/ceph-rgw-node1.<span class="hljs-built_in">log</span><br>rgw_frontends = beast port=7480<br>rgw thread pool size = 512<br><br>[client.rgw.node2]<br>keyring = /var/lib/ceph/radosgw/ceph-rgw.node2/keyring<br><span class="hljs-built_in">log</span> file = /var/log/ceph/ceph-rgw-node2.<span class="hljs-built_in">log</span><br>rgw_frontends = beast port=7480<br>rgw thread pool size = 512<br><br>[client.rgw.node3]<br>keyring = /var/lib/ceph/radosgw/ceph-rgw.node3/keyring<br><span class="hljs-built_in">log</span> file = /var/log/ceph/ceph-rgw-node3.<span class="hljs-built_in">log</span><br>rgw_frontends = beast port=7480<br>rgw thread pool size = 512<br></code></pre></td></tr></table></figure>
+
                 
               </div>
             
@@ -341,12 +339,12 @@
   
     <span>></span>
     
-  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/CubeFS/" class="category-chain-item">CubeFS</a>
+  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/" class="category-chain-item">Ceph</a>
   
   
     <span>></span>
     
-  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/CubeFS/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2/" class="category-chain-item">安装部署</a>
+  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2/" class="category-chain-item">安装部署</a>
   
   
 
@@ -367,9 +365,7 @@
       
         <a href="/mydocs/tags/storage/" class="print-no-link">#storage</a>
       
-        <a href="/mydocs/tags/cubefs/" class="print-no-link">#cubefs</a>
-      
-        <a href="/mydocs/tags/heketi/" class="print-no-link">#heketi</a>
+        <a href="/mydocs/tags/ceph/" class="print-no-link">#ceph</a>
       
         <a href="/mydocs/tags/linux/" class="print-no-link">#linux</a>
       
@@ -383,8 +379,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>CubeFS安装部署</div>
-      <div>http://xiangjie818.github.io/mydocs/2024/08/09/cubefs-install/</div>
+      <div>使用ceph-deploy部署Ceph集群</div>
+      <div>http://xiangjie818.github.io/mydocs/2024/08/09/ceph_install_ceph-deploy/</div>
     </div>
     <div class="license-meta">
       
@@ -428,12 +424,18 @@
                   <article class="post-prev col-6">
                     
                     
+                      <a href="/mydocs/2024/08/12/ceph_troubleshooting_bluefs-spillover/" title="OSD experiencing BlueFS Spillover">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OSD experiencing BlueFS Spillover</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/mydocs/2024/08/09/heketi_manage_glusterfs/" title="使用Heketi管理GlusterFS集群">
-                        <span class="hidden-mobile">使用Heketi管理GlusterFS集群</span>
+                      <a href="/mydocs/2024/08/09/cubefs_install/" title="CubeFS安装部署">
+                        <span class="hidden-mobile">CubeFS安装部署</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -444,6 +446,15 @@
             </div>
 
             
+  
+  
+    <article id="comments" lazyload>
+      
+
+    </article>
+  
+
+
           </article>
         </div>
       </div>
