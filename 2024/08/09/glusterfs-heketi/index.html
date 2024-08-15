@@ -19,24 +19,25 @@
   <meta name="author" content="渣渣杰">
   <meta name="keywords" content="">
   
-    <meta name="description" content="问题现象在对Ceph集群进行日常巡检时，使用ceph -s看到集群有以下状态 12345$ ceph -scluster:    id:     ebf905bd-9ee2-4dfe-a85a-df11a062c4f4    health: HEALTH_WARN            1 OSD(s) experiencing BlueFS spillover  问题分析在Ceph集群中，Blu">
+    <meta name="description" content="Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="OSD experiencing BlueFS Spillover">
-<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/12/ceph_troubleshooting_bluefs-spillover/index.html">
+<meta property="og:title" content="使用Heketi管理GlusterFS集群">
+<meta property="og:url" content="http://xiangjie818.github.io/mydocs/2024/08/09/glusterfs-heketi/index.html">
 <meta property="og:site_name" content="渣渣杰的运维文档">
-<meta property="og:description" content="问题现象在对Ceph集群进行日常巡检时，使用ceph -s看到集群有以下状态 12345$ ceph -scluster:    id:     ebf905bd-9ee2-4dfe-a85a-df11a062c4f4    health: HEALTH_WARN            1 OSD(s) experiencing BlueFS spillover  问题分析在Ceph集群中，Blu">
+<meta property="og:description" content="Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-08-12T02:01:57.000Z">
-<meta property="article:modified_time" content="2024-08-12T07:28:19.045Z">
+<meta property="article:published_time" content="2024-08-09T07:53:42.000Z">
+<meta property="article:modified_time" content="2024-08-12T10:08:30.543Z">
 <meta property="article:author" content="渣渣杰">
 <meta property="article:tag" content="storage">
-<meta property="article:tag" content="ceph">
 <meta property="article:tag" content="linux">
+<meta property="article:tag" content="glusterfs">
+<meta property="article:tag" content="heketi">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>OSD experiencing BlueFS Spillover - 渣渣杰的运维文档</title>
+  <title>使用Heketi管理GlusterFS集群 - 渣渣杰的运维文档</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -202,7 +203,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="OSD experiencing BlueFS Spillover"></span>
+            <span id="subtitle" data-typed-text="使用Heketi管理GlusterFS集群"></span>
           
         </div>
 
@@ -213,8 +214,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-08-12 10:01" pubdate>
-          2024年8月12日 上午
+        <time datetime="2024-08-09 15:53" pubdate>
+          2024年8月9日 下午
         </time>
       </span>
     
@@ -225,7 +226,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          820 字
+          537 字
         
       </span>
     
@@ -236,7 +237,7 @@
         
         
         
-          7 分钟
+          5 分钟
         
       </span>
     
@@ -273,34 +274,41 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">OSD experiencing BlueFS Spillover</h1>
+            <h1 id="seo-header">使用Heketi管理GlusterFS集群</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h2><p>在对Ceph集群进行日常巡检时，使用<code>ceph -s</code>看到集群有以下状态</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph -s<br>cluster:<br>    <span class="hljs-built_in">id</span>:     ebf905bd-9ee2-4dfe-a85a-df11a062c4f4<br>    health: HEALTH_WARN<br>            1 OSD(s) experiencing BlueFS spillover<br></code></pre></td></tr></table></figure>
+                <p>Heketi是一个开源的分布式存储管理工具，它允许用户在多个节点上运行GlusterFS集群，并使用RESTful API管理存储资源。</p>
+<span id="more"></span>
 
-<h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><p>在Ceph集群中，BlueFS是Ceph存储引擎中的一种存储后端，它负责管理数据块的存储和访问。BlueFS的 spillover 是指当数据块的大小超过磁盘容量时，BlueFS 会将数据块存储到其他磁盘上，而不是直接存储在当前磁盘上。这个状态一般是由于osd的db分区较小，导致db溢出。临时性的方案是对对应的osd的db分区进行压缩。根本性的方案是将db迁移到更大的分区。比较理想的db分区的大小为osd磁盘容量的4%。</p>
-<h2 id="处理过程"><a href="#处理过程" class="headerlink" title="处理过程"></a>处理过程</h2><h3 id="方案1：压缩osd的db分区"><a href="#方案1：压缩osd的db分区" class="headerlink" title="方案1：压缩osd的db分区"></a>方案1：压缩osd的db分区</h3><ol>
-<li>获取出现db溢出的osd<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph health detail<br>HEALTH_WARN 1 OSD(s) experiencing BlueFS spillover<br>[WRN] BLUEFS_SPILLOVER: 1 OSD(s) experiencing BlueFS spillover<br>     osd.69 spilled over 66 MiB metadata from <span class="hljs-string">&#x27;db&#x27;</span> device (71 GiB used of 93 GiB) to slow device<br></code></pre></td></tr></table></figure></li>
-<li>获取osd对应的节点<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd find osd.69<br>&#123;<br>    <span class="hljs-string">&quot;osd&quot;</span>: 69,<br>    <span class="hljs-string">&quot;addrs&quot;</span>: &#123;<br>        <span class="hljs-string">&quot;addrvec&quot;</span>: [<br>            &#123;<br>                <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;v2&quot;</span>,<br>                <span class="hljs-string">&quot;addr&quot;</span>: <span class="hljs-string">&quot;192.168.4.19:6820&quot;</span>,<br>                <span class="hljs-string">&quot;nonce&quot;</span>: 85132<br>            &#125;,<br>            &#123;<br>                <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;v1&quot;</span>,<br>                <span class="hljs-string">&quot;addr&quot;</span>: <span class="hljs-string">&quot;192.168.4.19:6821&quot;</span>,<br>                <span class="hljs-string">&quot;nonce&quot;</span>: 85132<br>            &#125;<br>        ]<br>    &#125;,<br>    <span class="hljs-string">&quot;osd_fsid&quot;</span>: <span class="hljs-string">&quot;d2fa632b-038b-4c53-b724-a8098d11a0bf&quot;</span>,<br>    <span class="hljs-string">&quot;host&quot;</span>: <span class="hljs-string">&quot;new-prod-ceph19&quot;</span>,<br>    <span class="hljs-string">&quot;crush_location&quot;</span>: &#123;<br>        <span class="hljs-string">&quot;host&quot;</span>: <span class="hljs-string">&quot;new-prod-ceph19&quot;</span>,<br>        <span class="hljs-string">&quot;rack&quot;</span>: <span class="hljs-string">&quot;rack3&quot;</span>,<br>        <span class="hljs-string">&quot;root&quot;</span>: <span class="hljs-string">&quot;default&quot;</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure></li>
-<li>压缩db数据<br>此操作只能在osd对应的节点上进行，需要先ssh到对应的节点，然后执行以下命令<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph daemon osd.69 compact<br></code></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="方案2：将db迁移到更大的分区"><a href="#方案2：将db迁移到更大的分区" class="headerlink" title="方案2：将db迁移到更大的分区"></a>方案2：将db迁移到更大的分区</h3><p>当物理节点没有足够的硬盘槽位时，需要将osd对应的节点的osd全部踢出，然后更换ssd后重新将节点添加回来</p>
+<h2 id="安装GlusterFS"><a href="#安装GlusterFS" class="headerlink" title="安装GlusterFS"></a>安装GlusterFS</h2><p>以下操作需要在所有的节点上执行</p>
 <ol>
-<li>关闭集群数据均衡<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd <span class="hljs-built_in">set</span> noout<br>$ ceph osd <span class="hljs-built_in">set</span> norecover<br>$ ceph osd <span class="hljs-built_in">set</span> nobackfill<br>$ ceph osd <span class="hljs-built_in">set</span> norebalance<br></code></pre></td></tr></table></figure></li>
-<li>踢出osd<br>这里以上面的osd.69所在的节点new-prod-ceph19为例，执行以下命令<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 停止OSD进程</span><br>$ <span class="hljs-keyword">for</span> osd <span class="hljs-keyword">in</span> `ceph osd ls-tree new-prod-ceph19`; <span class="hljs-keyword">do</span> systemctl stop ceph-osd@<span class="hljs-variable">$osd</span> ; <span class="hljs-keyword">done</span><br><span class="hljs-comment"># 踢出OSD</span><br>$ <span class="hljs-keyword">for</span> osd <span class="hljs-keyword">in</span> `ceph osd ls-tree new-prod-ceph19` ; <span class="hljs-keyword">do</span> ceph osd purge osd.<span class="hljs-variable">$osd</span> --yes-i-really-mean-it  ; <span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure></li>
-<li>更换ssd</li>
-<li>重新添加osd<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 对所有数据盘进行初始化</span><br>$ <span class="hljs-keyword">for</span> disk <span class="hljs-keyword">in</span> sdb sdc sdd sde sdf sdg sdh sdi sdj sdk sdl sdm ; <span class="hljs-keyword">do</span> sgdisk -Z /dev/<span class="hljs-variable">$disk</span> ; <span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure>
-对新添加的SSD进行分区, 将ssd根据数据盘的数量等分为对应个数的分区，这里为了方便，这里直接使用脚本。脚本内容如下<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/bash</span><br>dev=<span class="hljs-variable">$1</span><br>data_disk_num=<span class="hljs-variable">$2</span><br>total_size=$(lsblk -n -b /dev/<span class="hljs-variable">$dev</span> | awk <span class="hljs-string">&#x27;&#123;print $4&#125;&#x27;</span>)<br>per_partition_size=$(<span class="hljs-built_in">expr</span> <span class="hljs-variable">$&#123;total_size&#125;</span> / <span class="hljs-variable">$&#123;data_disk_num&#125;</span> / 1024)<br><br><span class="hljs-keyword">for</span> num <span class="hljs-keyword">in</span> $(<span class="hljs-built_in">seq</span> 1 <span class="hljs-variable">$&#123;data_disk_num&#125;</span>) ; <span class="hljs-keyword">do</span><br>    <span class="hljs-keyword">if</span> [ <span class="hljs-variable">$&#123;num&#125;</span> -ne <span class="hljs-variable">$&#123;data_disk_num&#125;</span> ] ; <span class="hljs-keyword">then</span><br>        sgdisk -n 0:0:+<span class="hljs-variable">$&#123;per_partition_size&#125;</span>KB /dev/<span class="hljs-variable">$&#123;dev&#125;</span><br>    <span class="hljs-keyword">else</span><br>        sgdisk -n 0:0:0 /dev/<span class="hljs-variable">$&#123;dev&#125;</span><br>    <span class="hljs-keyword">fi</span><br><span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure>
-执行分区脚本<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ sh parted_disk.sh sdl 10<br>$ sh parted_disk.sh sdm 10<br></code></pre></td></tr></table></figure>
-添加OSD，添加脚本保存在 192.168.4.11节点的&#x2F;root&#x2F;my-cluster&#x2F;history&#x2F;目录下，如无特殊情况，可以直接执行。 实际情况下根据创建集群时使用的添加osd方式再重新添加osd即可。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cd</span> /root/my-cluster/ &amp;&amp; sh <span class="hljs-built_in">history</span>/create_osd_new_prod_ceph19.sh<br></code></pre></td></tr></table></figure></li>
-<li>调整数据均衡速率<br>均衡速率通过<code>osd_max_backfills</code>参数控制，可以根据实际集群情况进行调整，这里设置为8以降低集群数据均衡的时间。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-keyword">for</span> osd <span class="hljs-keyword">in</span> `ceph osd ls-tree new-prod-ceph19`; <span class="hljs-keyword">do</span> ceph daemon osd.<span class="hljs-variable">$osd</span> config <span class="hljs-built_in">set</span> osd_max_backfills 8 ; <span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure></li>
-<li>恢复集群数据均衡<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ceph osd <span class="hljs-built_in">unset</span> noout<br>$ ceph osd <span class="hljs-built_in">unset</span> norecover<br>$ ceph osd <span class="hljs-built_in">unset</span> nobackfill<br>$ ceph osd <span class="hljs-built_in">unset</span> norebalance<br></code></pre></td></tr></table></figure></li>
+<li>安装glusterfs软件包<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ yum -y install glusterfs glusterfs-server glusterfs-fuse glusterfs-rdma<br></code></pre></td></tr></table></figure></li>
+<li>启动glusterfs服务<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ systemctl start glusterd &amp;&amp; systemctl <span class="hljs-built_in">enable</span> glusterd<br></code></pre></td></tr></table></figure></li>
 </ol>
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>验证方法为使用<code>ceph -s</code>查看集群状态，如果状态正常，则表示问题已解决。</p>
+<h2 id="安装Heketi"><a href="#安装Heketi" class="headerlink" title="安装Heketi"></a>安装Heketi</h2><ol>
+<li>使用yum安装heketi<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ yum -y install heketi heketi-client<br></code></pre></td></tr></table></figure>
+最新版本的heketi版本可以到github下载。项目地址: <a target="_blank" rel="noopener" href="https://github.com/heketi/heketi.git">https://github.com/heketi/heketi.git</a></li>
+<li>配置heketi<br>这里生成一个配置文件<code>/etc/heketi/heketi.json</code><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;port&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;18080&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;use_auth&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;_jwt&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Private keys for access&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;jwt&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;_admin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Admin has access to all APIs&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;admin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;paasadminkey&quot;</span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;_user&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;User only has access to /volumes endpoint&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;user&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;paasuserkey&quot;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;glusterfs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ssh&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;sshexec&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;keyfile&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/etc/heketi/heketi_key&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;user&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;root&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;fstab&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/etc/fstab&quot;</span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;db&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/etc/heketi/heketi.db&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;loglevel&quot;</span> <span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;debug&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure></li>
+<li>创建key<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ssh-keygen -t rsa -q -f /etc/heketi/heketi_key -N <span class="hljs-string">&quot;&quot;</span><br><span class="hljs-comment"># 拷贝key到其他节点</span><br>$ ssh-copy-id -i /etc/heketi/heketi_key.pub node1<br>$ ssh-copy-id -i /etc/heketi/heketi_key.pub node2<br>$ ssh-copy-id -i /etc/heketi/heketi_key.pub node3<br></code></pre></td></tr></table></figure></li>
+<li>创建db文件<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">touch</span> /etc/heketi/heketi.db<br><span class="hljs-comment"># 修改权限</span><br>$ <span class="hljs-built_in">chown</span> -R heketi:heketi /etc/heketi/*<br></code></pre></td></tr></table></figure></li>
+<li>添加环境变量<br>在文件<code>/etc/profile</code>中添加环境变量<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> HEKETI_CLI_SERVER=http://172.16.0.11:18080<br><span class="hljs-built_in">export</span> HEKETI_CLI_KEY=paasadminkey<br><span class="hljs-built_in">export</span> HEKETI_CLI_USER=admin<br></code></pre></td></tr></table></figure>
+加载环境变量<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">source</span> /etc/profile<br></code></pre></td></tr></table></figure></li>
+<li>启动heketi<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ systemctl start heketi &amp;&amp; systemctl <span class="hljs-built_in">enable</span> heketi<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="使用heketi管理GlusterFS集群"><a href="#使用heketi管理GlusterFS集群" class="headerlink" title="使用heketi管理GlusterFS集群"></a>使用heketi管理GlusterFS集群</h2><h3 id="创建集群"><a href="#创建集群" class="headerlink" title="创建集群"></a>创建集群</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli cluster create<br>Cluster <span class="hljs-built_in">id</span>: 2160d7fe0c438c8fbb53da7c82872f8f<br></code></pre></td></tr></table></figure>
+<h3 id="添加节点"><a href="#添加节点" class="headerlink" title="添加节点"></a>添加节点</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli node add --cluster 2160d7fe0c438c8fbb53da7c82872f8f --hostname 172.16.0.11 --zone=1<br>$ heketi-cli node add --cluster 2160d7fe0c438c8fbb53da7c82872f8f --hostname 172.16.0.12 --zone=2<br>$ heketi-cli node add --cluster 2160d7fe0c438c8fbb53da7c82872f8f --hostname 172.16.0.13 --zone=3<br></code></pre></td></tr></table></figure>
+<h3 id="添加磁盘"><a href="#添加磁盘" class="headerlink" title="添加磁盘"></a>添加磁盘</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli device add --name=/dev/sde --node=4023ac3cadd0aa851ee28f39c4f56068<br>$ heketi-cli device add --name=/dev/sdf --node=4023ac3cadd0aa851ee28f39c4f56068<br>$ heketi-cli device add --name=/dev/sde --node=4133fa420529dd115ee7333a0b704e64<br>$ heketi-cli device add --name=/dev/sdf --node=4133fa420529dd115ee7333a0b704e64<br>$ heketi-cli device add --name=/dev/sde --node=fd1a9f1608884b51d9a9ff44c03ce4d2<br>$ heketi-cli device add --name=/dev/sdf --node=fd1a9f1608884b51d9a9ff44c03ce4d2<br></code></pre></td></tr></table></figure>
+<h3 id="创建volume"><a href="#创建volume" class="headerlink" title="创建volume"></a>创建volume</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli volume create --name=<span class="hljs-built_in">test</span> --size=1 --replica=3<br></code></pre></td></tr></table></figure>
+<h3 id="扩容volume"><a href="#扩容volume" class="headerlink" title="扩容volume"></a>扩容volume</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli volume <span class="hljs-built_in">expand</span> --<span class="hljs-built_in">id</span>=52decd5f6dd71c40ef967cf0f0f8f55d --size=1<br></code></pre></td></tr></table></figure>
+<h3 id="获取集群的topology信息"><a href="#获取集群的topology信息" class="headerlink" title="获取集群的topology信息"></a>获取集群的topology信息</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ heketi-cli topology info --json &gt; /tmp/topology<br></code></pre></td></tr></table></figure>
 
+<div class="note note-info">
+            <p>由于频繁的获取topology会对heketi产生一定的压力，所以这里把查询的信息写入到文件，之后的操作直接读取保存的文件，避免频繁的访问heketi</p>
+          </div>
+
+<h3 id="根据brickID查询volume名称"><a href="#根据brickID查询volume名称" class="headerlink" title="根据brickID查询volume名称"></a>根据brickID查询volume名称</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cat</span> /tmp/topology  | jq -r <span class="hljs-string">&#x27;.clusters[0].volumes[] | select(.bricks[].id == &quot;52decd5f6dd71c40ef967cf0f0f8f55d&quot;)&#x27;</span> | jq .name<br></code></pre></td></tr></table></figure>
                 
               </div>
             
@@ -323,15 +331,8 @@
   
     <span>></span>
     
-  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/" class="category-chain-item">Ceph</a>
+  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/GlusterFS/" class="category-chain-item">GlusterFS</a>
   
-  
-    <span>></span>
-    
-  <a href="/mydocs/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/Ceph/%E6%95%85%E9%9A%9C%E5%A4%84%E7%90%86/" class="category-chain-item">故障处理</a>
-  
-  
-
   
 
   
@@ -349,9 +350,11 @@
       
         <a href="/mydocs/tags/storage/" class="print-no-link">#storage</a>
       
-        <a href="/mydocs/tags/ceph/" class="print-no-link">#ceph</a>
-      
         <a href="/mydocs/tags/linux/" class="print-no-link">#linux</a>
+      
+        <a href="/mydocs/tags/glusterfs/" class="print-no-link">#glusterfs</a>
+      
+        <a href="/mydocs/tags/heketi/" class="print-no-link">#heketi</a>
       
     </div>
   
@@ -363,8 +366,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>OSD experiencing BlueFS Spillover</div>
-      <div>http://xiangjie818.github.io/mydocs/2024/08/12/ceph_troubleshooting_bluefs-spillover/</div>
+      <div>使用Heketi管理GlusterFS集群</div>
+      <div>http://xiangjie818.github.io/mydocs/2024/08/09/glusterfs-heketi/</div>
     </div>
     <div class="license-meta">
       
@@ -376,7 +379,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2024年8月12日</div>
+          <div>2024年8月9日</div>
         </div>
       
       
@@ -408,21 +411,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/mydocs/2024/08/12/ceph_operation_crush-manage/" title="Ceph集群容灾域调整">
+                      <a href="/mydocs/2024/08/09/cubefs-install/" title="CubeFS安装部署">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Ceph集群容灾域调整</span>
+                        <span class="hidden-mobile">CubeFS安装部署</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
-                    
-                      <a href="/mydocs/2024/08/09/ceph_install_ceph-deploy/" title="使用ceph-deploy部署Ceph集群">
-                        <span class="hidden-mobile">使用ceph-deploy部署Ceph集群</span>
-                        <span class="visible-mobile">下一篇</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
                     
                   </article>
                 </div>
